@@ -1,4 +1,4 @@
-FUD LIBRARY ![Go Reference](https://go.dev/)
+FUD LIBRARY [Go Reference](https://go.dev/)
 ===============
 
 # FUD Library Core Api 
