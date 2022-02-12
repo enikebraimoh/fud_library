@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"fud_library/book"
 	"fud_library/utils"
 	"log"
 	"net/http"
@@ -21,6 +22,8 @@ func Router(server *socketio.Server) *mux.Router {
 	r := mux.NewRouter().StrictSlash(true)
 
 	r.HandleFunc("/", VersionHandler)
+	r.HandleFunc("/posts", book.CreatePost).Methods("POST")
+	r.HandleFunc("/posts", book.GetPosts).Methods("GET")
 
 	return r
 }

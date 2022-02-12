@@ -111,6 +111,31 @@ func GetMongoDBDocs(collectionName string, filter map[string]interface{}, opts .
 	return data, nil
 }
 
+// get single MongoDb document for a collection.
+func GetMongoDBDoc(collectionName string, filter map[string]interface{}, opts ...*options.FindOneOptions) (bson.M, error) {
+	ctx := context.Background()
+	collection := defaultMongoHandle.GetCollection(collectionName)
+
+	var data bson.M
+	if err := collection.FindOne(ctx, MapToBson(filter), opts...).Decode(&data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func CreateMongoDBDoc(collectionName string, data map[string]interface{}) (*mongo.InsertOneResult, error) {
+	ctx := context.Background()
+	collection := defaultMongoHandle.GetCollection(collectionName)
+	res, err := collection.InsertOne(ctx, MapToBson(data))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func CreateUniqueIndex(collName, field string, order int) error {
 	collection := defaultMongoHandle.GetCollection(collName)
 
