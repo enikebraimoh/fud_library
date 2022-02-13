@@ -1,49 +1,110 @@
 package auth
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"fud_library/utils"
+	"io/ioutil"
 	"net/http"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func SendOTP(response http.ResponseWriter, request *http.Request) {
+
 	response.Header().Add("content-type", "application/json")
+	request.Header.Add("Accept", "text/plain")
+	request.Header.Add("Authorization", "test_pk_edG8flS7COjYXkdsaTBdhoQAZ")
 
-	var otp OTP
-	var user User
+	// get request URL
+	//regURL, _ := url.Parse("https://sandbox.dojah.io/api/v1/messaging/otp")
 
-	err := utils.ParseJSONFromRequest(request, &otp)
+	//var error OtpError
 
-	if err != nil {
-		utils.GetError(err, http.StatusUnprocessableEntity, response)
-		return
-	}
+	// create request body
+	jsonValue, _ := json.Marshal(request.Body)
 
-	phone_number := otp.PhoneNumber
+	req, _ := http.NewRequest("POST", "https://sandbox.dojah.io/api/v1/messaging/otp", bytes.NewBuffer(jsonValue))
 
-	user.PhoneNumber = phone_number
-	user.FirstName = ""
-	user.LastName = ""
-	user.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), time.Now().UTC().Hour(), time.Now().Minute(), time.Now().Second(), 0, time.Local)
+	req.Header.Set("content-type", "application/json")
+	req.Header.Set("Accept", "text/plain")
 
-	detail, _ := utils.StructToMap(user)
+	client := &http.Client{}
+	res, err := client.Do(req)
 
-	res, err := utils.CreateMongoDBDoc(UserCollectionName, detail)
+	var errorr OtpError
 
+	// check for response error
 	if err != nil {
 		utils.GetError(err, http.StatusInternalServerError, response)
-		return
+		fmt.Printf("therer was an error", err)
+	} else {
+		data, _ := ioutil.ReadAll(res.Body)
+
+		err := json.Unmarshal(data, &errorr)
+		if err != nil {
+			http.Error(response, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// err := utils.ParseJSONFromResponse(res, errorr)
+
+		// if err != nil {
+		// 	http.Error(response, err.Error(), http.StatusBadRequest)
+		// 	return
+		// }
+
+		utils.GetSuccess("User created", errorr, response)
+		fmt.Printf(string(data))
 	}
 
-	insertedPostID := res.InsertedID.(primitive.ObjectID).Hex()
+	// close response body
+	defer res.Body.Close()
 
-	_ = insertedPostID
+	// defer res.Body.Close()
+	// body, _ := ioutil.ReadAll(res.Body)
 
-	utils.GetSuccess("User created", bson.M{}, response)
+	// if err := json.NewDecoder(res.Body).Decode(&error); err != nil {
+	// 	log.Println(err)
+	// 	utils.GetError(err, http.StatusInternalServerError, response)
+	// }
+
+	// fmt.Println(res.StatusCode)
+	// fmt.Println(string(error.errors))
+
+	// utils.GetSuccess("User created", error.errors, response)
+
+	// var otp OTP
+	// var user User
+
+	// err := utils.ParseJSONFromRequest(request, &otp)
+
+	// if err != nil {
+	// 	utils.GetError(err, http.StatusUnprocessableEntity, response)
+	// 	return
+	// }
+
+	// phone_number := otp.PhoneNumber
+
+	// user.PhoneNumber = phone_number
+	// user.FirstName = ""
+	// user.LastName = ""
+	// user.CreatedAt = time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), time.Now().UTC().Hour(), time.Now().Minute(), time.Now().Second(), 0, time.Local)
+
+	// detail, _ := utils.StructToMap(user)
+
+	// res, err := utils.CreateMongoDBDoc(UserCollectionName, detail)
+
+	// if err != nil {
+	// 	utils.GetError(err, http.StatusInternalServerError, response)
+	// 	return
+	// }
+
+	// insertedPostID := res.InsertedID.(primitive.ObjectID).Hex()
+
+	// _ = insertedPostID
+
 }
 
 func VerifyOTP(response http.ResponseWriter, request *http.Request) {

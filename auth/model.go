@@ -25,3 +25,7 @@ type Verify struct {
 	PhoneNumber string `json:"phone_number" bson:"phone_number" validate:"required"`
 	OtpCode     string `json:"otp_code" bson:"otp_code"`
 }
+
+type OtpError struct {
+	Errors string `json:"error" bson:"error"`
+}

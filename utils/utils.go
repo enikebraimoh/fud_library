@@ -45,6 +45,10 @@ func ParseJSONFromRequest(r *http.Request, v interface{}) error {
 	return json.NewDecoder(r.Body).Decode(v)
 }
 
+func ParseJSONFromResponse(r *http.Response, v interface{}) error {
+	return json.NewDecoder(r.Body).Decode(v)
+}
+
 // GetError : This is helper function to prepare error model.
 func GetError(err error, statusCode int, w http.ResponseWriter) {
 	var response = ErrorResponse{
