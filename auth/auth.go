@@ -12,23 +12,34 @@ import (
 )
 
 func SendOTP(response http.ResponseWriter, request *http.Request) {
-
 	response.Header().Add("content-type", "application/json")
 	request.Header.Add("Accept", "text/plain")
+	request.Header.Add("AppId", "62082f3c7e7b1300341e0a27")
 	request.Header.Add("Authorization", "test_pk_edG8flS7COjYXkdsaTBdhoQAZ")
 
 	// get request URL
 	//regURL, _ := url.Parse("https://sandbox.dojah.io/api/v1/messaging/otp")
 
 	//var error OtpError
-
 	// create request body
-	jsonValue, _ := json.Marshal(request.Body)
+
+	var otpRequest SendOTPRequest
+
+	err := utils.ParseJSONFromRequest(request, &otpRequest)
+
+	jsonValue, _ := json.Marshal(otpRequest)
+
+	if err != nil {
+		utils.GetError(err, http.StatusUnprocessableEntity, response)
+		return
+	}
 
 	req, _ := http.NewRequest("POST", "https://sandbox.dojah.io/api/v1/messaging/otp", bytes.NewBuffer(jsonValue))
 
 	req.Header.Set("content-type", "application/json")
 	req.Header.Set("Accept", "text/plain")
+	req.Header.Set("Authorization", "test_sk_cGXPTa7okHGOr6NIR35qh3ntB")
+	req.Header.Set("AppId", "62082f3c7e7b1300341e0a27")
 
 	client := &http.Client{}
 	res, err := client.Do(req)
@@ -38,7 +49,6 @@ func SendOTP(response http.ResponseWriter, request *http.Request) {
 	// check for response error
 	if err != nil {
 		utils.GetError(err, http.StatusInternalServerError, response)
-		fmt.Printf("therer was an error", err)
 	} else {
 
 		data, _ := ioutil.ReadAll(res.Body)
@@ -51,16 +61,14 @@ func SendOTP(response http.ResponseWriter, request *http.Request) {
 
 		if res.StatusCode != 200 {
 			utils.GetError(fmt.Errorf(errorr.Errors), res.StatusCode, response)
-
 			return
 		}
 
-		utils.GetSuccess("User created", errorr, response)
-		fmt.Printf(string(data))
+		utils.GetSuccess("OTP verification sent", errorr, response)
 	}
 
 	// close response body
-	defer res.Body.Close()
+	//defer res.Body.Close()
 
 	// defer res.Body.Close()
 	// body, _ := ioutil.ReadAll(res.Body)

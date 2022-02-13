@@ -1,6 +1,8 @@
 package auth
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	UserCollectionName = "user"
@@ -28,4 +30,20 @@ type Verify struct {
 
 type OtpError struct {
 	Errors string `json:"error" bson:"error"`
+}
+
+type SendOTPRequest struct {
+	SenderID    string `json:"sender_id"`
+	Destination string `json:"destination"`
+	Channel     string `json:"channel"`
+	Length      int    `json:"length"`
+}
+
+type SuccessOTPResponse struct {
+	Entity []struct {
+		ReferenceID string `json:"reference_id" bson:"reference_id"`
+		Destination string `json:"destination"`
+		StatusID    string `json:"status_id"`
+		Status      string `json:"status"`
+	} `json:"entity"`
 }
