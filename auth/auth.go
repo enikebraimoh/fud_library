@@ -40,20 +40,20 @@ func SendOTP(response http.ResponseWriter, request *http.Request) {
 		utils.GetError(err, http.StatusInternalServerError, response)
 		fmt.Printf("therer was an error", err)
 	} else {
-		data, _ := ioutil.ReadAll(res.Body)
 
+		data, _ := ioutil.ReadAll(res.Body)
 		err := json.Unmarshal(data, &errorr)
+
 		if err != nil {
 			http.Error(response, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		// err := utils.ParseJSONFromResponse(res, errorr)
+		if res.StatusCode != 200 {
+			utils.GetError(fmt.Errorf(errorr.Errors), res.StatusCode, response)
 
-		// if err != nil {
-		// 	http.Error(response, err.Error(), http.StatusBadRequest)
-		// 	return
-		// }
+			return
+		}
 
 		utils.GetSuccess("User created", errorr, response)
 		fmt.Printf(string(data))
