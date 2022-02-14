@@ -36,14 +36,22 @@ type SendOTPRequest struct {
 	SenderID    string `json:"sender_id"`
 	Destination string `json:"destination"`
 	Channel     string `json:"channel"`
-	Length      int    `json:"length"`
+	Length      int32  `json:"length"`
 }
 
 type SuccessOTPResponse struct {
-	Entity []struct {
-		ReferenceID string `json:"reference_id" bson:"reference_id"`
-		Destination string `json:"destination"`
-		StatusID    string `json:"status_id"`
-		Status      string `json:"status"`
+	Entity []Entity `json:"entity"`
+}
+
+type Entity struct {
+	ReferenceID string `json:"reference_id"`
+	Destination string `json:"destination"`
+	StatusID    string `json:"status_id"`
+	Status      string `json:"status"`
+}
+
+type VerifiedOTPResponse struct {
+	Entity struct {
+		Valid bool `json:"valid"`
 	} `json:"entity"`
 }
