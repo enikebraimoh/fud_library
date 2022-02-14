@@ -75,11 +75,11 @@ func SendOTP(response http.ResponseWriter, request *http.Request) {
 
 			//data, _ := ioutil.ReadAll(res.Body)
 			err := json.Unmarshal(data, &otpres)
-			//err := json.NewDecoder(data).Decode(&jsonData)
+			//	err := json.NewDecoder(data).Decode(&jsonData)
 
 			if err != nil {
 				http.Error(response, err.Error(), http.StatusBadRequest)
-				log.Println("tryinng to connvert otp response to struct")
+				log.Println("trying to connvert otp response to struct")
 				return
 			}
 
@@ -97,7 +97,7 @@ func SendOTP(response http.ResponseWriter, request *http.Request) {
 
 			if err != nil {
 				utils.GetError(err, http.StatusInternalServerError, response)
-				log.Println("tryinng to save to db")
+				log.Println("trying to save to db")
 				return
 			}
 
@@ -108,7 +108,6 @@ func SendOTP(response http.ResponseWriter, request *http.Request) {
 		utils.GetError(fmt.Errorf(errorr.Errors), res.StatusCode, response)
 
 	}
-
 }
 
 func VerifyOTP(response http.ResponseWriter, request *http.Request) {
@@ -122,8 +121,6 @@ func VerifyOTP(response http.ResponseWriter, request *http.Request) {
 	code := request.FormValue("code")
 	phone := request.FormValue("phone_number")
 
-	_ = code
-
 	save, _ := utils.GetMongoDBDoc(UserCollectionName, bson.M{"phone_number": phone})
 
 	if save == nil {
@@ -131,21 +128,25 @@ func VerifyOTP(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	dbuser, err := utils.GetMongoDBDoc(UserCollectionName, bson.M{"phone_number": phone})
+	// dbuser, err := utils.GetMongoDBDoc(UserCollectionName, bson.M{"phone_number": phone})
 
-	if err != nil {
-		utils.GetError(err, http.StatusInternalServerError, response)
-		return
-	}
+	// if err != nil {
+	// 	utils.GetError(err, http.StatusInternalServerError, response)
+	// 	return
+	// }
 
 	var currentUser User
 
-	bsonBytes, _ := bson.Marshal(dbuser)
+	bsonBytes, _ := bson.Marshal(save)
+
 	if err := bson.Unmarshal(bsonBytes, &currentUser); err != nil {
+		utils.GetError(fmt.Errorf("errror converting from database to struct"), http.StatusNotFound, response)
 		return
 	}
 
-	ValidatePhone(phone, currentUser.Reference_id)
+
+	log.Println(currentUser.ID)
+	//ValidatePhone(phone, currentUser.Reference_id)
 
 	url := fmt.Sprintf("https://sandbox.dojah.io/api/v1/messaging/otp/validate?code=%s&reference_id=%s", code, currentUser.Reference_id)
 
@@ -170,22 +171,23 @@ func VerifyOTP(response http.ResponseWriter, request *http.Request) {
 		err := json.Unmarshal(data, &errorr)
 
 		if err != nil {
+			log.Println("error converting error response body ")
 			http.Error(response, err.Error(), http.StatusBadRequest)
 			return
 		}
+		log.Println(string(data))
 
-		if res.StatusCode != 200 {
-			utils.GetError(fmt.Errorf(errorr.Errors), res.StatusCode, response)
-			return
-		} else {
-
+		if res.StatusCode == 200 {
 			var otpres VerifiedOTPResponse
 			var user User
 
-			data, _ := ioutil.ReadAll(res.Body)
+			//err := json.NewDecoder(string(data)).Decode(&otpres)
+			//err := json.NewDecoder(data).Decode(&jsonData)
 			err := json.Unmarshal(data, &otpres)
 
 			if err != nil {
+				log.Println("error convertinng success responnd")
+				log.Println(string(data))
 				http.Error(response, err.Error(), http.StatusBadRequest)
 				return
 			}
@@ -195,11 +197,19 @@ func VerifyOTP(response http.ResponseWriter, request *http.Request) {
 			res, err := utils.CreateMongoDBDoc(UserCollectionName, detail)
 			_ = res
 			if err != nil {
+				log.Println("error updated user to saving to db")
 				utils.GetError(err, http.StatusInternalServerError, response)
 				return
 			}
 
-			utils.GetSuccess("OTP verified", errorr, response)
+			utils.GetSuccess("User verified", errorr, response)
+
+			return
+		} else {
+
+			log.Println("response is not 200")
+			utils.GetError(fmt.Errorf(errorr.Errors), res.StatusCode, response)
+			return
 
 		}
 

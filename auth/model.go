@@ -51,7 +51,9 @@ type Entity struct {
 }
 
 type VerifiedOTPResponse struct {
-	Entity struct {
-		Valid bool `json:"valid"`
-	} `json:"entity"`
+	Entity SuccessEntity `json:"entity"`
+}
+
+type SuccessEntity struct {
+	Valid bool `json:"valid"`
 }

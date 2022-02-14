@@ -26,7 +26,7 @@ func Router(server *socketio.Server) *mux.Router {
 	r.HandleFunc("/posts", book.CreatePost).Methods("POST")
 	r.HandleFunc("/posts", book.GetPosts).Methods("GET")
 	r.HandleFunc("/sendotp", auth.SendOTP).Methods("POST")
-	r.HandleFunc("/verifyotp", auth.VerifyOTP).Methods("POST")
+	r.HandleFunc("/verifyotp", auth.VerifyOTP).Methods("GET")
 
 	return r
 }
