@@ -31,15 +31,17 @@ func SendOTP(response http.ResponseWriter, request *http.Request) {
 
 	err := utils.ParseJSONFromRequest(request, &otpRequest)
 
+	otpRequest.Channel = "sms"
+	value := 4
+	otpRequest.Length = int32(value)
+	log.Println(int32(value))
+
 	jsonValue, _ := json.Marshal(otpRequest)
 
 	if err != nil {
 		utils.GetError(err, http.StatusUnprocessableEntity, response)
 		return
 	}
-
-	otpRequest.Channel = "sms"
-	otpRequest.Length = 5
 
 	req, _ := http.NewRequest("POST", "https://sandbox.dojah.io/api/v1/messaging/otp", bytes.NewBuffer(jsonValue))
 
@@ -101,7 +103,7 @@ func SendOTP(response http.ResponseWriter, request *http.Request) {
 				return
 			}
 
-			utils.GetSuccess("OTP verification sent", otpres, response)
+			utils.GetSuccess("OTP verification sent", nil, response)
 			return
 		}
 
@@ -147,7 +149,10 @@ func VerifyOTP(response http.ResponseWriter, request *http.Request) {
 	log.Println(currentUser.ID)
 	//ValidatePhone(phone, currentUser.Reference_id)
 
-	url := fmt.Sprintf("https://sandbox.dojah.io/api/v1/messaging/otp/validate?code=%s&reference_id=%s", code, currentUser.Reference_id)
+	ref := currentUser.Reference_id
+
+	log.Println(ref)
+	url := fmt.Sprintf("https://sandbox.dojah.io/api/v1/messaging/otp/validate?code=%s&reference_id=%s", code, ref)
 
 	req, _ := http.NewRequest("GET", url, nil)
 
@@ -170,7 +175,7 @@ func VerifyOTP(response http.ResponseWriter, request *http.Request) {
 		err := json.Unmarshal(data, &errorr)
 
 		if err != nil {
-			log.Println("error converting error response body ")
+			log.Println("error converting error response body")
 			http.Error(response, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -190,23 +195,28 @@ func VerifyOTP(response http.ResponseWriter, request *http.Request) {
 			}
 
 			if otpres.Entity.Valid {
-				currentUser.Reference_id = nil
+				//detail, _ := utils.StructToMap(currentUser)
 
-				detail, _ := utils.StructToMap(currentUser)
-
-				res, err := utils.UpdateOneMongoDBDoc(UserCollectionName, currentUser.ID, detail)
-				_ = res
+				result, err := utils.UpdateOneMongoDBDoc(UserCollectionName, currentUser.ID, bson.M{"reference_id": ""})
+				log.Println(result.UpsertedID)
 
 				if err != nil {
 					log.Println("error updated user to saving to db")
 					utils.GetError(err, http.StatusInternalServerError, response)
 					return
 				}
-				utils.GetSuccess("User verified", nil, response)
-			}
 
-			utils.GetError(fmt.Errorf("otp has expired or something"), http.StatusNotFound, response)
-			return
+				if result.ModifiedCount == 0 {
+					utils.GetError(errors.New("operation failed"), http.StatusInternalServerError, response)
+					return
+				}
+
+				utils.GetSuccess("User verified", nil, response)
+				return
+			} else {
+				utils.GetError(fmt.Errorf("otp has expired or something"), http.StatusNotFound, response)
+				return
+			}
 
 		} else {
 			log.Println("response is not 200")

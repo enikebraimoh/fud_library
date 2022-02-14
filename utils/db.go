@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -153,4 +154,25 @@ func CreateUniqueIndex(collName, field string, order int) error {
 	fmt.Printf("%s index on %s collection created successfully\n", indexName, collName)
 
 	return nil
+}
+
+// Update single MongoDb document for a collection.
+func UpdateOneMongoDBDoc(collectionName, id string, data map[string]interface{}) (*mongo.UpdateResult, error) {
+	ctx := context.Background()
+	opts := options.Update().SetUpsert(true)
+	collection := defaultMongoHandle.GetCollection(collectionName)
+
+	_id, _ := primitive.ObjectIDFromHex(id)
+
+	filter := bson.M{"_id": _id}
+
+	// updateOne sets the fields, without using $set the entire document will be overwritten
+	updateData := bson.M{"$set": MapToBson(data)}
+	res, err := collection.UpdateOne(ctx, filter, updateData, opts)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
