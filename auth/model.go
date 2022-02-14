@@ -13,7 +13,7 @@ type User struct {
 	FirstName    string    `json:"first_name" bson:"first_name"`
 	LastName     string    `json:"last_name" bson:"last_name"`
 	PhoneNumber  string    `json:"phone_number" bson:"phone_number"`
-	Reference_id string    `json:"reference_id" bson:"reference_id"`
+	Reference_id *string   `json:"reference_id" bson:"reference_id"`
 	CreatedAt    time.Time `json:"created_at" bson:"created_at"`
 	EditedAt     time.Time `json:"edited_at" bson:"edited_at"`
 	DeletedAt    time.Time `json:"deleted_at" bson:"deleted_at"`

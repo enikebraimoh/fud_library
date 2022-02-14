@@ -1,12 +1,15 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // get env vars; return empty string if not found.
@@ -88,4 +91,23 @@ func StructToMap(inStruct interface{}) (map[string]interface{}, error) {
 	}
 
 	return out, nil
+}
+
+// Update single MongoDb document for a collection.
+func UpdateOneMongoDBDoc(collectionName, id string, data map[string]interface{}) (*mongo.UpdateResult, error) {
+	ctx := context.Background()
+	collection := defaultMongoHandle.GetCollection(collectionName)
+
+	_id, _ := primitive.ObjectIDFromHex(id)
+	filter := bson.M{"_id": _id}
+
+	// updateOne sets the fields, without using $set the entire document will be overwritten
+	updateData := bson.M{"$set": MapToBson(data)}
+	res, err := collection.UpdateOne(ctx, filter, updateData)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

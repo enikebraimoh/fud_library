@@ -144,7 +144,6 @@ func VerifyOTP(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-
 	log.Println(currentUser.ID)
 	//ValidatePhone(phone, currentUser.Reference_id)
 
@@ -179,8 +178,6 @@ func VerifyOTP(response http.ResponseWriter, request *http.Request) {
 
 		if res.StatusCode == 200 {
 			var otpres VerifiedOTPResponse
-			var user User
-
 			//err := json.NewDecoder(string(data)).Decode(&otpres)
 			//err := json.NewDecoder(data).Decode(&jsonData)
 			err := json.Unmarshal(data, &otpres)
@@ -192,21 +189,26 @@ func VerifyOTP(response http.ResponseWriter, request *http.Request) {
 				return
 			}
 
-			detail, _ := utils.StructToMap(user)
+			if otpres.Entity.Valid {
+				currentUser.Reference_id = nil
 
-			res, err := utils.CreateMongoDBDoc(UserCollectionName, detail)
-			_ = res
-			if err != nil {
-				log.Println("error updated user to saving to db")
-				utils.GetError(err, http.StatusInternalServerError, response)
-				return
+				detail, _ := utils.StructToMap(currentUser)
+
+				res, err := utils.UpdateOneMongoDBDoc(UserCollectionName, currentUser.ID, detail)
+				_ = res
+
+				if err != nil {
+					log.Println("error updated user to saving to db")
+					utils.GetError(err, http.StatusInternalServerError, response)
+					return
+				}
+				utils.GetSuccess("User verified", nil, response)
 			}
 
-			utils.GetSuccess("User verified", errorr, response)
-
+			utils.GetError(fmt.Errorf("otp has expired or something"), http.StatusNotFound, response)
 			return
-		} else {
 
+		} else {
 			log.Println("response is not 200")
 			utils.GetError(fmt.Errorf(errorr.Errors), res.StatusCode, response)
 			return
