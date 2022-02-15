@@ -197,7 +197,10 @@ func VerifyOTP(response http.ResponseWriter, request *http.Request) {
 			if otpres.Entity.Valid {
 				//detail, _ := utils.StructToMap(currentUser)
 
-				result, err := utils.UpdateOneMongoDBDoc(UserCollectionName, currentUser.ID, bson.M{"reference_id": ""})
+				updateFields := make(map[string]interface{})
+				updateFields["reference_id"] = ""
+
+				result, err := utils.UpdateOneMongoDBDoc(UserCollectionName, currentUser.ID, updateFields)
 				log.Println(result.UpsertedID)
 
 				if err != nil {

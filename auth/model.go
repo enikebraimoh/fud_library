@@ -9,7 +9,7 @@ const (
 )
 
 type User struct {
-	ID           string    `json:"_id,omitempty" bson:"id,omitempty"`
+	ID           string    `bson:"_id,omitempty" json:"_id,omitempty"`
 	FirstName    string    `json:"first_name" bson:"first_name"`
 	LastName     string    `json:"last_name" bson:"last_name"`
 	PhoneNumber  string    `json:"phone_number" bson:"phone_number"`
